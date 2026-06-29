@@ -1,65 +1,314 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+
+type FormState = {
+  name: string;
+  unit: string;
+  colesPrice: string;
+  woolworthsPrice: string;
+  aldiPrice: string;
+};
+
+type Product = {
+  id: string;
+  name: string;
+  unit: string;
+  colesPrice: number;
+  woolworthsPrice: number;
+  aldiPrice: number;
+};
+
+const emptyForm: FormState = {
+  name: "",
+  unit: "",
+  colesPrice: "",
+  woolworthsPrice: "",
+  aldiPrice: "",
+};
+
+function formatAud(amount: number): string {
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+  }).format(amount);
+}
+
+function getPriceComparison(product: Product) {
+  const stores = [
+    { name: "Coles", price: product.colesPrice },
+    { name: "Woolworths", price: product.woolworthsPrice },
+    { name: "ALDI", price: product.aldiPrice },
+  ];
+
+  const cheapestPrice = Math.min(...stores.map((store) => store.price));
+  const highestPrice = Math.max(...stores.map((store) => store.price));
+  const cheapestSupermarket = stores
+    .filter((store) => store.price === cheapestPrice)
+    .map((store) => store.name)
+    .join(", ");
+
+  return {
+    cheapestSupermarket,
+    cheapestPrice,
+    priceDifference: highestPrice - cheapestPrice,
+  };
+}
+
+function isValidPrice(value: string): boolean {
+  const parsed = Number.parseFloat(value);
+  return value.trim() !== "" && Number.isFinite(parsed) && parsed >= 0;
+}
 
 export default function Home() {
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  function updateField(field: keyof FormState, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const trimmedName = form.name.trim();
+    const trimmedUnit = form.unit.trim();
+
+    if (
+      !trimmedName ||
+      !trimmedUnit ||
+      !isValidPrice(form.colesPrice) ||
+      !isValidPrice(form.woolworthsPrice) ||
+      !isValidPrice(form.aldiPrice)
+    ) {
+      return;
+    }
+
+    setProducts((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        name: trimmedName,
+        unit: trimmedUnit,
+        colesPrice: Number.parseFloat(form.colesPrice),
+        woolworthsPrice: Number.parseFloat(form.woolworthsPrice),
+        aldiPrice: Number.parseFloat(form.aldiPrice),
+      },
+    ]);
+
+    setForm(emptyForm);
+  }
+
+  const inputClassName =
+    "mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20";
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen bg-slate-50 px-5 py-10 text-slate-900">
+      <div className="mx-auto max-w-3xl">
+        <header className="mb-10">
+          <p className="text-sm font-semibold text-emerald-600">
+            Grocery Price Comparison
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+          <h1 className="mt-2 text-4xl font-bold tracking-tight">
+            GrocCompare
+          </h1>
+
+          <p className="mt-3 text-slate-600">
+            Compare grocery prices across Coles, Woolworths and ALDI.
+          </p>
+        </header>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold">Your products</h2>
+
+          <p className="mt-2 text-slate-600">
+            Add up to 20 products and compare prices manually.
+          </p>
+
+          <button
+            type="button"
+            className="mt-6 rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            Add product
+          </button>
+
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <div>
+              <label
+                htmlFor="product-name"
+                className="text-sm font-medium text-slate-700"
+              >
+                Product name
+              </label>
+              <input
+                id="product-name"
+                type="text"
+                value={form.name}
+                onChange={(event) => updateField("name", event.target.value)}
+                placeholder="e.g. Milk"
+                className={inputClassName}
+                required
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="product-unit"
+                className="text-sm font-medium text-slate-700"
+              >
+                Unit / size
+              </label>
+              <input
+                id="product-unit"
+                type="text"
+                value={form.unit}
+                onChange={(event) => updateField("unit", event.target.value)}
+                placeholder="e.g. 2L"
+                className={inputClassName}
+                required
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label
+                  htmlFor="coles-price"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Coles price
+                </label>
+                <input
+                  id="coles-price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.colesPrice}
+                  onChange={(event) =>
+                    updateField("colesPrice", event.target.value)
+                  }
+                  placeholder="0.00"
+                  className={inputClassName}
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="woolworths-price"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Woolworths price
+                </label>
+                <input
+                  id="woolworths-price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.woolworthsPrice}
+                  onChange={(event) =>
+                    updateField("woolworthsPrice", event.target.value)
+                  }
+                  placeholder="0.00"
+                  className={inputClassName}
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="aldi-price"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  ALDI price
+                </label>
+                <input
+                  id="aldi-price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.aldiPrice}
+                  onChange={(event) =>
+                    updateField("aldiPrice", event.target.value)
+                  }
+                  placeholder="0.00"
+                  className={inputClassName}
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white"
+            >
+              Save product
+            </button>
+          </form>
+
+          {products.length > 0 && (
+            <div className="mt-8 space-y-3">
+              {products.map((product) => {
+                const comparison = getPriceComparison(product);
+
+                return (
+                  <article
+                    key={product.id}
+                    className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                  >
+                    <h3 className="font-semibold">{product.name}</h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {product.unit}
+                    </p>
+
+                    <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                      <div>
+                        <dt className="text-slate-500">Coles</dt>
+                        <dd className="font-medium">
+                          {formatAud(product.colesPrice)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">Woolworths</dt>
+                        <dd className="font-medium">
+                          {formatAud(product.woolworthsPrice)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">ALDI</dt>
+                        <dd className="font-medium">
+                          {formatAud(product.aldiPrice)}
+                        </dd>
+                      </div>
+                    </dl>
+
+                    <dl className="mt-4 grid gap-2 border-t border-slate-200 pt-4 text-sm sm:grid-cols-3">
+                      <div>
+                        <dt className="text-slate-500">Cheapest supermarket</dt>
+                        <dd className="font-medium text-emerald-700">
+                          {comparison.cheapestSupermarket}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">Cheapest price</dt>
+                        <dd className="font-medium text-emerald-700">
+                          {formatAud(comparison.cheapestPrice)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">Price difference</dt>
+                        <dd className="font-medium">
+                          {formatAud(comparison.priceDifference)}
+                        </dd>
+                      </div>
+                    </dl>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
   );
 }
