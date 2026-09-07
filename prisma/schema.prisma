@@ -1,0 +1,32 @@
+// New file — does not touch any existing code.
+// Provider is Postgres (Supabase/Neon). Connection string comes from the
+// DATABASE_URL environment variable, which is NOT committed (see .env.example).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+
+}
+
+// One row per (product, supermarket) price observation.
+// We keep history rather than overwriting, so "lastUpdated" has real meaning
+// and you can later show price trends if you want.
+model PriceObservation {
+  id             String   @id @default(cuid())
+  supermarket    String   // "coles" | "woolworths" | "aldi"
+  productName    String   // e.g. "Woolworths Beef Chuck Large 650g - 1.5kg"
+  searchTerm     String   // e.g. "chuck" — what query produced this row
+  price          Float    // total price for the package, e.g. 27.00
+  unitPrice      Float?   // price per kg/L etc, e.g. 18.00 (nullable: not all products have one)
+  unitPriceLabel String?  // display string, e.g. "$18.00 / 1KG"
+  packageSize    String?  // e.g. "650g - 1.5kg"
+  sourceUrl      String?  // link back to the product page, for the "X source" links in the UI
+  scrapedAt      DateTime @default(now())
+
+  @@index([searchTerm, supermarket])
+}

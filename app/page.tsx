@@ -29,7 +29,14 @@ type FormState = {
   aldiPrice: string;
 };
 
-
+type AdminProduct = {
+  id: string;
+  name: string;
+  unit: string;
+  colesPrice: number;
+  woolworthsPrice: number;
+  aldiPrice: number;
+};
 
 const selectedGroceryProducts: GroceryProduct[] = [
   {
