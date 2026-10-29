@@ -42,3 +42,4 @@ next-env.d.ts
 
 # scraping scripts must never be committed (see project notes)
 /scraper/
+/data/*.json
